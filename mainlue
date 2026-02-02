@@ -4177,7 +4177,7 @@ local script = G2L["18"];
 		HitboxAnti.Name = "HitboxAnti"
 		
 		HitboxAnti.Touched:Connect(function(hit)
-			if hit.Parent:IsA("Model") then 
+			if hit.Parent:IsA("Model") and hit.Parent:FindFirstChild("Humanoid") and hit.Parent:FindFirstChild("HumanoidRootPart") and hit.Parent ~= char then 
 				if hit.Parent:WaitForChild("Handcuffs") then
 					root.CFrame = tp
 					HitboxAnti:Destroy()
