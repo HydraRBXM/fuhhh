@@ -3549,26 +3549,20 @@ local script = G2L["14"];
 	end
 	
 	----------------------------------------------------
-	-- BoostyAhhCar (FULLY FIXED)
+	-- BoostyAhhCar (ACTUALLY WORKS + STRONG)
 	----------------------------------------------------
 	local function StopBoost()
-		if BoostConnection then
-			BoostConnection:Disconnect()
-			BoostConnection = nil
-		end
-		if BoostInputBeganConnection then
-			BoostInputBeganConnection:Disconnect()
-			BoostInputBeganConnection = nil
-		end
-		if BoostInputEndedConnection then
-			BoostInputEndedConnection:Disconnect()
-			BoostInputEndedConnection = nil
-		end
+		if BoostConnection then BoostConnection:Disconnect() BoostConnection = nil end
+		if BoostInputBeganConnection then BoostInputBeganConnection:Disconnect() BoostInputBeganConnection = nil end
+		if BoostInputEndedConnection then BoostInputEndedConnection:Disconnect() BoostInputEndedConnection = nil end
 	
 		local character = Player.Character
 		if character then
-			for _, v in pairs(character:GetDescendants()) do
+			for _, v in ipairs(character:GetDescendants()) do
 				if v:IsA("VectorForce") and v.Name == "BoostForce" then
+					v:Destroy()
+				end
+				if v:IsA("Attachment") and v.Name == "BoostAttachment" then
 					v:Destroy()
 				end
 			end
@@ -3586,52 +3580,56 @@ local script = G2L["14"];
 		local hrp = character:FindFirstChild("HumanoidRootPart")
 		if not humanoid or not hrp then return end
 	
-		local isBoostHeld = false
-		local boostPower = 8000 -- 🔥 actual force, not velocity
-		local currentForce = 0
-		local accel = 12000
-		local decel = 16000
+		local boosting = false
 	
-		local function getTargetPart()
+		-- 🔥 THESE NUMBERS ARE BIG ON PURPOSE
+		local FORCE_PER_MASS = 4500      -- higher = stronger
+		local ACCEL = 12000
+		local DECEL = 18000
+	
+		local currentForce = 0
+		local boostForce
+		local boostAttachment
+	
+		local function getPart()
 			if humanoid.Sit and humanoid.SeatPart then
 				return humanoid.SeatPart
 			end
 			return hrp
 		end
 	
-		local function attachForce(part)
-			local att = part:FindFirstChild("BoostAttachment")
-			if not att then
-				att = Instance.new("Attachment")
-				att.Name = "BoostAttachment"
-				att.Parent = part
-			end
+		local function ensureForce(part)
+			if boostForce and boostForce.Parent == part then return end
 	
-			local vf = Instance.new("VectorForce")
-			vf.Name = "BoostForce"
-			vf.Attachment0 = att
-			vf.RelativeTo = Enum.ActuatorRelativeTo.World
-			vf.ApplyAtCenterOfMass = true
-			vf.Force = Vector3.zero
-			vf.Parent = part
+			if boostForce then boostForce:Destroy() end
+			if boostAttachment then boostAttachment:Destroy() end
 	
-			return vf
+			boostAttachment = Instance.new("Attachment")
+			boostAttachment.Name = "BoostAttachment"
+			boostAttachment.Parent = part
+	
+			boostForce = Instance.new("VectorForce")
+			boostForce.Name = "BoostForce"
+			boostForce.Attachment0 = boostAttachment
+			boostForce.RelativeTo = Enum.ActuatorRelativeTo.World
+			boostForce.ApplyAtCenterOfMass = true
+			boostForce.Force = Vector3.zero
+			boostForce.Parent = part
 		end
 	
 		BoostInputBeganConnection = UIS.InputBegan:Connect(function(input, gp)
 			if gp then return end
 			if input.KeyCode == Enum.KeyCode.LeftControl then
-				isBoostHeld = true
+				boosting = true
 			end
 		end)
 	
 		BoostInputEndedConnection = UIS.InputEnded:Connect(function(input)
 			if input.KeyCode == Enum.KeyCode.LeftControl then
-				isBoostHeld = false
+				boosting = false
 			end
 		end)
 	
-		local boostForce
 		BoostConnection = RunService.Heartbeat:Connect(function(dt)
 			if not Toggles.Boost.Value then
 				StopBoost()
@@ -3643,24 +3641,27 @@ local script = G2L["14"];
 				return
 			end
 	
-			local part = getTargetPart()
+			local part = getPart()
 			if not part then return end
 	
-			if not boostForce or boostForce.Parent ~= part then
-				if boostForce then boostForce:Destroy() end
-				boostForce = attachForce(part)
-			end
+			ensureForce(part)
 	
-			if isBoostHeld then
-				currentForce = math.min(boostPower, currentForce + accel * dt)
+			if boosting then
+				currentForce += ACCEL * dt
 			else
-				currentForce = math.max(0, currentForce - decel * dt)
+				currentForce -= DECEL * dt
 			end
 	
-			local look = part.CFrame.LookVector
-			boostForce.Force = look * currentForce
+			currentForce = math.clamp(currentForce, 0, FORCE_PER_MASS)
+	
+			-- 💀 MASS-SCALED FORCE (THIS IS THE FIX)
+			local mass = part.AssemblyMass
+			local direction = part.CFrame.LookVector
+	
+			boostForce.Force = direction * currentForce * mass
 		end)
 	end
+	
 	
 	
 	----------------------------------------------------
