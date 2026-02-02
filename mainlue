@@ -4160,11 +4160,12 @@ local script = G2L["18"];
 	end
 	
 	local function MakeHitbox()
-		-- Don't create a new hitbox if one already exists
+		CleanHitbox()
+		if char.Humanoid.WalkSpeed <= 0 then return end
 		if HitboxAnti then return end
 	
 		HitboxAnti = Instance.new("Part")
-		HitboxAnti.Size = Vector3.new(25, 25, 25)
+		HitboxAnti.Size = Vector3.new(5, 12, 5)
 		HitboxAnti.Transparency = .7
 		HitboxAnti.CanCollide = false
 		HitboxAnti.Anchored = false
