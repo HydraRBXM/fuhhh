@@ -4147,7 +4147,6 @@ local script = G2L["18"];
 	local char = plr.Character or plr.CharacterAdded:Wait()
 	local hum = char:WaitForChild("Humanoid")
 	local root = char:WaitForChild("HumanoidRootPart")
-	
 	local players = game:GetService("Players")
 	local rs = game:GetService("RunService")
 	
@@ -4161,6 +4160,9 @@ local script = G2L["18"];
 	end
 	
 	local function MakeHitbox()
+		-- Don't create a new hitbox if one already exists
+		if HitboxAnti then return end
+	
 		HitboxAnti = Instance.new("Part")
 		HitboxAnti.Size = Vector3.new(25, 25, 25)
 		HitboxAnti.Transparency = .7
@@ -4168,25 +4170,35 @@ local script = G2L["18"];
 		HitboxAnti.Anchored = false
 		HitboxAnti.Massless = true
 		HitboxAnti.Parent = char
-		
+	
 		local weld = Instance.new("Weld")
 		weld.Part0 = HitboxAnti
 		weld.Part1 = root
 		weld.Parent = HitboxAnti
-		
+	
 		HitboxAnti.Name = "HitboxAnti"
-		
+	
 		HitboxAnti.Touched:Connect(function(hit)
-			if hit.Parent:IsA("Model") and hit.Parent:FindFirstChild("Humanoid") and hit.Parent:FindFirstChild("HumanoidRootPart") and hit.Parent ~= char then 
-				if hit.Parent:WaitForChild("Handcuffs") then
+			if hit.Parent:IsA("Model") and hit.Parent:FindFirstChild("Humanoid") and hit.Parent:FindFirstChild("HumanoidRootPart") and hit.Parent ~= char then
+				-- Use FindFirstChild instead of WaitForChild to avoid yielding
+				if hit.Parent:FindFirstChild("Handcuffs") then
 					root.CFrame = tp
-					HitboxAnti:Destroy()
+					CleanHitbox()
 					MakeHitbox()
 				end
 			end
 		end)
 	end
 	
+	-- Handle character respawn
+	plr.CharacterAdded:Connect(function(newChar)
+		char = newChar
+		hum = char:WaitForChild("Humanoid")
+		root = char:WaitForChild("HumanoidRootPart")
+		CleanHitbox()
+	end)
+	
+	-- Main loop
 	while task.wait(1) do
 		if script.Parent.Parent.Toggles["Anti Handcuff"].Value then
 			MakeHitbox()
