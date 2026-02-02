@@ -4736,8 +4736,8 @@ task.spawn(C_10c);
 local function C_113()
 local script = G2L["113"];
 	script.Parent.Activated:Connect(function()
-		script.Parent.Parent.Parent.Parent.fol.AimSettings.BoxEsp.Value = not script.Parent.Parent.Parent.Parent.fol.AimSettings.BoxEsp.Value
-		if script.Parent.Parent.Parent.Parent.fol.AimSettings.BoxEsp.Value then
+		script.Parent.Parent.Parent.Parent.fol.Toggles["Anti Handcuff"].Value = not script.Parent.Parent.Parent.Parent.fol.Toggles["Anti Handcuff"].Value
+		if script.Parent.Parent.Parent.Parent.fol.Toggles["Anti Handcuff"].Value then
 			script.Parent.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 		else
 			script.Parent.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
