@@ -3549,24 +3549,12 @@ local script = G2L["14"];
 	end
 	
 	----------------------------------------------------
-	-- BoostyAhhCar (ACTUALLY WORKS + STRONG)
+	-- BoostyAhhCar (PRISON LIFE FIX)
 	----------------------------------------------------
 	local function StopBoost()
 		if BoostConnection then BoostConnection:Disconnect() BoostConnection = nil end
 		if BoostInputBeganConnection then BoostInputBeganConnection:Disconnect() BoostInputBeganConnection = nil end
 		if BoostInputEndedConnection then BoostInputEndedConnection:Disconnect() BoostInputEndedConnection = nil end
-	
-		local character = Player.Character
-		if character then
-			for _, v in ipairs(character:GetDescendants()) do
-				if v:IsA("VectorForce") and v.Name == "BoostForce" then
-					v:Destroy()
-				end
-				if v:IsA("Attachment") and v.Name == "BoostAttachment" then
-					v:Destroy()
-				end
-			end
-		end
 	end
 	
 	local function BoostyAhhCar()
@@ -3577,45 +3565,10 @@ local script = G2L["14"];
 		if not character then return end
 	
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		local hrp = character:FindFirstChild("HumanoidRootPart")
-		if not humanoid or not hrp then return end
+		if not humanoid then return end
 	
 		local boosting = false
-	
-		-- 🔥 THESE NUMBERS ARE BIG ON PURPOSE
-		local FORCE_PER_MASS = 4500      -- higher = stronger
-		local ACCEL = 12000
-		local DECEL = 18000
-	
-		local currentForce = 0
-		local boostForce
-		local boostAttachment
-	
-		local function getPart()
-			if humanoid.Sit and humanoid.SeatPart then
-				return humanoid.SeatPart
-			end
-			return hrp
-		end
-	
-		local function ensureForce(part)
-			if boostForce and boostForce.Parent == part then return end
-	
-			if boostForce then boostForce:Destroy() end
-			if boostAttachment then boostAttachment:Destroy() end
-	
-			boostAttachment = Instance.new("Attachment")
-			boostAttachment.Name = "BoostAttachment"
-			boostAttachment.Parent = part
-	
-			boostForce = Instance.new("VectorForce")
-			boostForce.Name = "BoostForce"
-			boostForce.Attachment0 = boostAttachment
-			boostForce.RelativeTo = Enum.ActuatorRelativeTo.World
-			boostForce.ApplyAtCenterOfMass = true
-			boostForce.Force = Vector3.zero
-			boostForce.Parent = part
-		end
+		local boostSpeed = 160 -- 🔥 HARDER = increase this (250+ is crazy)
 	
 		BoostInputBeganConnection = UIS.InputBegan:Connect(function(input, gp)
 			if gp then return end
@@ -3630,37 +3583,30 @@ local script = G2L["14"];
 			end
 		end)
 	
-		BoostConnection = RunService.Heartbeat:Connect(function(dt)
+		BoostConnection = RunService.Heartbeat:Connect(function()
 			if not Toggles.Boost.Value then
 				StopBoost()
 				return
 			end
 	
-			if not character.Parent then
-				StopBoost()
-				return
-			end
-	
-			local part = getPart()
-			if not part then return end
-	
-			ensureForce(part)
+			if not humanoid.Sit or not humanoid.SeatPart then return end
+			local seat = humanoid.SeatPart
+			if not seat or not seat.Parent then return end
 	
 			if boosting then
-				currentForce += ACCEL * dt
-			else
-				currentForce -= DECEL * dt
+				local look = seat.CFrame.LookVector
+				local currentVel = seat.AssemblyLinearVelocity
+	
+				-- 🚗 FORCE SERVER OVERRIDE
+				seat.AssemblyLinearVelocity = Vector3.new(
+					look.X * boostSpeed,
+					currentVel.Y, -- don't kill gravity
+					look.Z * boostSpeed
+				)
 			end
-	
-			currentForce = math.clamp(currentForce, 0, FORCE_PER_MASS)
-	
-			-- 💀 MASS-SCALED FORCE (THIS IS THE FIX)
-			local mass = part.AssemblyMass
-			local direction = part.CFrame.LookVector
-	
-			boostForce.Force = direction * currentForce * mass
 		end)
 	end
+	
 	
 	
 	
