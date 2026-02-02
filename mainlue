@@ -2255,7 +2255,7 @@ G2L["111"]["TextColor3"] = Color3.fromRGB(255, 255, 255);
 G2L["111"]["BackgroundTransparency"] = 1;
 G2L["111"]["Size"] = UDim2.new(0.66201, 0, 0.73171, 0);
 G2L["111"]["BorderColor3"] = Color3.fromRGB(0, 0, 0);
-G2L["111"]["Text"] = [[Anti Handcuff (PRISON LIFE ONLY)]];
+G2L["111"]["Text"] = [[Anti Handcuff V2]];
 G2L["111"]["Position"] = UDim2.new(0.02514, 0, 0.12195, 0);
 
 
