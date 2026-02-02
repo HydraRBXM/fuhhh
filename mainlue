@@ -3111,7 +3111,8 @@ local script = G2L["14"];
 	local BounceConnection
 	local FlingConnection
 	local BoostConnection
-	local BoostInputConnection
+	local BoostInputBeganConnection
+	local BoostInputEndedConnection
 	
 	-- Suscar debounce
 	local SuscarDebounce = false
@@ -3555,9 +3556,13 @@ local script = G2L["14"];
 			BoostConnection:Disconnect()
 			BoostConnection = nil
 		end
-		if BoostInputConnection then
-			BoostInputConnection:Disconnect()
-			BoostInputConnection = nil
+		if BoostInputBeganConnection then
+			BoostInputBeganConnection:Disconnect()
+			BoostInputBeganConnection = nil
+		end
+		if BoostInputEndedConnection then
+			BoostInputEndedConnection:Disconnect()
+			BoostInputEndedConnection = nil
 		end
 	end
 	
@@ -3576,8 +3581,7 @@ local script = G2L["14"];
 		local boostVelocity = 150 -- Edit this value for boost speed! 🔥
 	
 		-- Listen for key press (Left Control for boost)
-		local inputEndConnection
-		BoostInputConnection = UIS.InputBegan:Connect(function(input, gp)
+		BoostInputBeganConnection = UIS.InputBegan:Connect(function(input, gp)
 			if gp then return end
 			if input.KeyCode == Enum.KeyCode.LeftControl then
 				isBoostPressed = true
@@ -3585,7 +3589,7 @@ local script = G2L["14"];
 		end)
 	
 		-- Listen for key release
-		inputEndConnection = UIS.InputEnded:Connect(function(input)
+		BoostInputEndedConnection = UIS.InputEnded:Connect(function(input)
 			if input.KeyCode == Enum.KeyCode.LeftControl then
 				isBoostPressed = false
 			end
@@ -3594,40 +3598,44 @@ local script = G2L["14"];
 		BoostConnection = RunService.Heartbeat:Connect(function()
 			if not Toggles.Boost.Value then
 				StopBoost()
-				if inputEndConnection then
-					inputEndConnection:Disconnect()
-				end
 				return
 			end
 	
-			if not hrp.Parent or not humanoid then
+			if not character or not character.Parent then
 				StopBoost()
-				if inputEndConnection then
-					inputEndConnection:Disconnect()
-				end
+				return
+			end
+	
+			local currentHrp = character:FindFirstChild("HumanoidRootPart")
+			local currentHumanoid = character:FindFirstChildOfClass("Humanoid")
+	
+			if not currentHrp or not currentHumanoid then
+				StopBoost()
 				return
 			end
 	
 			-- Only boost when key is held down
 			if isBoostPressed then
 				-- Check if in seat - boost the seat
-				if humanoid.Sit and humanoid.SeatPart then
-					local seat = humanoid.SeatPart
-					local lookDirection = seat.CFrame.LookVector
+				if currentHumanoid.Sit and currentHumanoid.SeatPart then
+					local seat = currentHumanoid.SeatPart
+					if seat and seat.Parent then
+						local lookDirection = seat.CFrame.LookVector
 	
-					-- Apply forward boost to the seat
-					seat.AssemblyLinearVelocity = Vector3.new(
-						lookDirection.X * boostVelocity,
-						seat.AssemblyLinearVelocity.Y, -- Keep current Y velocity
-						lookDirection.Z * boostVelocity
-					)
+						-- Apply forward boost to the seat
+						seat.AssemblyLinearVelocity = Vector3.new(
+							lookDirection.X * boostVelocity,
+							seat.AssemblyLinearVelocity.Y, -- Keep current Y velocity
+							lookDirection.Z * boostVelocity
+						)
+					end
 				else
 					-- Boost the player if not in seat
-					local lookDirection = hrp.CFrame.LookVector
+					local lookDirection = currentHrp.CFrame.LookVector
 	
-					hrp.AssemblyLinearVelocity = Vector3.new(
+					currentHrp.AssemblyLinearVelocity = Vector3.new(
 						lookDirection.X * boostVelocity,
-						hrp.AssemblyLinearVelocity.Y,
+						currentHrp.AssemblyLinearVelocity.Y,
 						lookDirection.Z * boostVelocity
 					)
 				end
